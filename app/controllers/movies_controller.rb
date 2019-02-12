@@ -11,14 +11,28 @@ class MoviesController < ApplicationController
   end
 
   def index
-      @movies = Movie.order(params[:sort])
-      if params[:sort] == 'title'
-        @css_title = 'hilite'
-      elsif params[:sort] == 'release_date'
-        @css_release_date = 'hilite'
-  end
+    @all_ratings = Movie.distinct.pluck(:rating)#ratings arr
+    # SELECT DISTINCT rating FROM Movie
+    @selected_ratings = []
 
-  end
+    if params[:ratings] # if filter by rating
+      @movies = Movie.find_by_rating(params[:ratings].keys)
+      @selected_ratings = params[:ratings].keys # make sure still checked after redisplaying
+     # params[:ratings].each {|key, value| @selected_ratings << key}
+     # @movies = Movie.where("rating IN (?)", @selected_ratings)#select with ratings
+    elsif params[:sort]
+      @movies = Movie.order(params[:sort]) #else if sorting by title or date
+      if params[:sort] == 'title'
+         @css_title = 'hilite'
+      elsif params[:sort] == 'release_date'
+         @css_release_date = 'hilite'
+      end
+    else
+      @movies = Movie.all#else get all
+      @selected_ratings = Movie.distinct.pluck(:rating)
+    end
+
+end
 
   def new
     # default: render 'new' template
