@@ -11,35 +11,79 @@ class MoviesController < ApplicationController
   end
 
   def index
+    # used by checkbox
     @all_ratings = Movie.distinct.pluck(:rating)#ratings arr
     # SELECT DISTINCT rating FROM Movie
     @selected_ratings = []
+    redirect_flag = false
+    sort_by = ""
 
-    if params[:ratings] # if filter by rating
-      @movies = Movie.find_by_rating(params[:ratings].keys)
-      @selected_ratings = params[:ratings].keys # make sure still checked after redisplaying
-     # params[:ratings].each {|key, value| @selected_ratings << key}
-     # @movies = Movie.where("rating IN (?)", @selected_ratings)#select with ratings
-    elsif params[:sort]
-      @movies = Movie.order(params[:sort]) #else if sorting by title or date
-      @selected_ratings = Movie.distinct.pluck(:rating)
-      if params[:sort] == 'title'
-         @css_title = 'hilite'
-      elsif params[:sort] == 'release_date'
-         @css_release_date = 'hilite'
-      end
+    # the first time use params[:sort] store it into the session
+    if params[:sort]
+      sort_by = params[:sort]
+      session[:sort] = sort_by
+    elsif session[:sort]
+      sort_by = session[:sort]
+      redirect_flag = true
     else
-      @movies = Movie.all#else get all
+      sort_by = nil
+    end
+
+    if params[:ratings]
+      @selected_ratings = params[:ratings].keys
+      session[:ratings] = params[:ratings]
+    elsif session[:ratings]
+      @selected_ratings = session[:ratings].keys
+      redirect_flag = true
+    else
       @selected_ratings = Movie.distinct.pluck(:rating)
     end
 
+=begin
+    if !sort_by and !rating_by
+      @movies = Movie.all
+      @selected_ratings = Movie.distinct.pluck(:rating)
+      return
+    end
+
+    if params[:sort]
+      if rating_by
+        @movies = Movie.find_by_rating(rating_by.keys).order(sort_by)
+        @selected_ratings = rating_by.keys
+      else
+        @movies = Movie.order(sort_by)
+        @selected_ratings = Movie.distinct.pluck(:rating)
+      end
+    else # params[:rating_by]
+      if sort_by
+        @movies = Movie.find_by_rating(rating_by.keys).order(sort_by)
+        @selected_ratings = rating_by.keys
+      else
+        @movies = Movie.find_by_rating(rating_by.keys)
+        @selected_ratings = rating_by.keys
+      end
+    end
+=end
+    if sort_by == 'title'
+       @css_title = 'hilite'
+    elsif sort_by == 'release_date'
+       @css_release_date = 'hilite'
+    end
+    if redirect_flag
+      # flash.keep
+      redirect_to movies_path(sort: sort_by, ratings: session[:ratings])
+    else
+      @movies = Movie.find_by_rating(@selected_ratings).order(sort_by)
+    end
 end
 
   def new
+    # @movie = Movie.new
     # default: render 'new' template
   end
 
   def create
+    # debugger
     @movie = Movie.create!(movie_params)
     flash[:notice] = "#{@movie.title} was successfully created."
     redirect_to movies_path
