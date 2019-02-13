@@ -1,0 +1,4 @@
+https://obscure-dusk-70895.herokuapp.com/
+https://github.com/Easoncyx/rottenpotatoes-rails-intro.git
+YixuChen
+627008228
